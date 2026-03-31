@@ -1,0 +1,8 @@
+config:
+  edition: 3
+
+streams:
+  all_notes:
+    auto_subscribe: true
+    queries:
+      - SELECT id, title, content, is_public, owner_id, created_at, updated_at FROM notes

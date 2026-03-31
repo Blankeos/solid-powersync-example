@@ -1,6 +1,4 @@
-import { createResource, createSignal } from "solid-js"
 import { useMetadata } from "vike-metadata-solid"
-import { honoClient } from "@/lib/hono-client"
 import getTitle from "@/utils/get-title"
 
 export default function Page() {
@@ -8,41 +6,16 @@ export default function Page() {
     title: getTitle("Home"),
   })
 
-  const [data] = createResource(async () => {
-    const res = await honoClient.todos.$get()
-    return res.json()
-  })
-
   return (
-    <>
-      <div>
-        <h1>My Vike + Solid app</h1>
-        This page is:
-        <ul>
-          <li>Rendered to HTML.</li>
-          <li>
-            Interactive. <Counter />
-          </li>
-          <li>
-            Working fetch:{" "}
-            {data.loading
-              ? "Loading..."
-              : data.error
-                ? `Error: ${data.error.message}`
-                : JSON.stringify(data())}
-          </li>
-        </ul>
-      </div>
-    </>
-  )
-}
-
-function Counter() {
-  const [count, setCount] = createSignal(0)
-
-  return (
-    <button type="button" onClick={() => setCount((count) => count + 1)}>
-      Counter {count()}
-    </button>
+    <div class="flex min-h-screen flex-col items-center justify-center p-8">
+      <h1 class="mb-4 font-bold text-4xl">Solid Notes</h1>
+      <p class="mb-8 text-gray-600 text-lg">Local-first notes with PowerSync</p>
+      <a
+        href="/login"
+        class="rounded-lg bg-blue-600 px-6 py-3 text-white transition hover:bg-blue-700"
+      >
+        Get Started
+      </a>
+    </div>
   )
 }

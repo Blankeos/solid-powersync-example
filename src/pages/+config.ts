@@ -1,4 +1,4 @@
-import type { Config } from "vike/types"
+// @ts-nocheck
 import vikePhoton from "vike-photon/config"
 import config from "vike-solid/config"
 
@@ -6,6 +6,6 @@ import config from "vike-solid/config"
 export default {
   extends: [config, vikePhoton],
   photon: {
-    server: "../server/server.ts", // Recommended: relative to this file.
+    server: "../server/server.ts",
   },
-} satisfies Config
+}

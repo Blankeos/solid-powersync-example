@@ -1,56 +1,149 @@
-# 🐇 Solid Hop
+# Solid PowerSync Example
 
-💙 A **minimal** and **unopinionated** Vike + Solid + Hono starter.
+A barebones local-first sync application demonstrating PowerSync + SQLite + PostgreSQL with SolidJS.
 
-❤️ We love Vike and Solid, but it might be overwhelming to setup. The goal of this starter is to get you up and running quickly with good defaults without getting in the way of your opinions.
+## What This Demo Shows
 
-This is more or less what you would get from a starter with `create next-app` or `create svelte` or `create solid`.
+This is an Apple Notes-style app showcasing:
 
-If you want a more opinionated and fully-featured boilerplate instead: http://github.com/blankeos/solid-launch
+- **Local-first architecture**: Data is stored locally in SQLite, synced when online
+- **Offline support**: Full functionality while offline, syncs on reconnection
+- **Real-time sync**: Changes propagate across devices instantly when online
+- **Per-user data**: Private notes visible only to owner, public notes visible to all
 
-## Tech Stack:
+## Tech Stack
 
-1. Vike + Hono - For SSR + Your own Server.
-2. SolidJS
-3. Bun (Can swap this with Node easily if you want).
-4. Tools: Biome
-
-## Features:
-
-- [x] 🦋 **Type-safe Routing** - Inspired by TanStack Router, I'm the author of [`vike-routegen`](https://github.com/blankeos/vike-routegen) which codegens typesafe page routing for you, and it's a breeze!
-- [x] ⚡️ **Super-fast dev server** - way faster than NextJS thanks to Vite. You need to feel it to believe it! It can also literally build your app in seconds.
-- [x] **🥊 Robust Error Practices** - I thoughtfully made sure there's a best practice for errors here already. You can throw errors in a consistent manner in the backend and display them consistently in the frontend.
+| Layer    | Technology                            |
+| -------- | ------------------------------------- |
+| Frontend | SolidJS + Vike + Tailwind CSS         |
+| Backend  | Hono (Bun runtime)                    |
+| Database | PostgreSQL (source) + SQLite (client) |
+| Sync     | PowerSync (self-hosted)               |
+| Auth     | Simple session-based (demo accounts)  |
 
 ## Quick Start
 
-1. Get template
+### Prerequisites
 
-```sh
-npx degit https://github.com/blankeos/solid-hop <your-app-name>
+- [Bun](https://bun.sh)
+- [Docker](https://docker.com)
+
+### 1. Start Infrastructure
+
+```bash
+docker compose up -d
 ```
 
-1. Install
+This starts:
 
-```sh
-bun install
+- PostgreSQL (source database) on port 5432
+- PowerSync service on port 8080
+
+### 2. Setup Environment
+
+```bash
+cp .env.example .env
 ```
 
-3. Run dev server
+### 3. Run Database Migrations
 
-```sh
+```bash
+bun run db:migrate
+```
+
+### 4. Start Development Server
+
+```bash
 bun dev
 ```
 
-## Building and Deployment
+Open http://localhost:3000
 
-1. Build
+## Demo Accounts
 
-```sh
-bun run build
+| Account   | ID          |
+| --------- | ----------- |
+| Account A | `account-a` |
+| Account B | `account-b` |
+
+No passwords - just click to login.
+
+## Testing Sync
+
+1. Open the app in two different browsers (or incognito)
+2. Login as Account A on both
+3. Create a note on Browser 1 - it syncs to Browser 2
+4. Go offline on Browser 1 (DevTools > Network > Offline)
+5. Edit note - changes saved locally
+6. Stay online on Browser 2 - no changes visible yet
+7. Go online on Browser 1 - changes sync to Browser 2
+8. Mark note as public on Browser 1
+9. Login as Account B on Browser 3 - can see the public note
+
+## Project Structure
+
+```
+src/
+├── lib/
+│   ├── hono-client.ts          # API client
+│   └── powersync/               # PowerSync integration
+│       ├── schema.ts           # Client schema
+│       ├── database.ts          # DB instance
+│       └── connector.ts         # Auth + write connector
+├── context/
+│   ├── powersync.context.tsx    # PowerSync provider
+│   └── auth.context.tsx         # Auth state
+├── server/
+│   ├── database/                # DB client & migrations
+│   └── modules/
+│       ├── auth/                # Auth endpoints
+│       ├── notes/               # Notes CRUD
+│       └── powersync/           # PowerSync write handler
+└── pages/
+    ├── login/                   # Login page
+    └── notes/                   # Notes list & editor
 ```
 
-2. Wherever you deploy, just run make sure that this is ran:
+## How It Works
 
-```sh
-bun run preview # Just runs server.ts
+### Architecture
+
 ```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   Browser       │     │  PowerSync       │     │   PostgreSQL    │
+│   (Solid App)   │◄───►│  Service         │◄───►│   (Source DB)   │
+│   SQLite        │     │  (Sync Engine)   │     │                 │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+```
+
+### Data Flow
+
+1. **Reads**: Client queries local SQLite directly (instant)
+2. **Sync**: PowerSync streams changes from PostgreSQL to SQLite
+3. **Writes**: Client queues writes locally → uploads to backend → backend writes to PostgreSQL → PowerSync syncs back
+
+### Sync Rules
+
+- Private notes sync only to owner
+- Public notes sync to all users
+
+## Scripts
+
+| Command              | Description             |
+| -------------------- | ----------------------- |
+| `bun dev`            | Start dev server        |
+| `bun run build`      | Build for production    |
+| `bun run db:migrate` | Run database migrations |
+| `bun run lint`       | Lint code               |
+| `bun run check`      | Type check              |
+
+## Learn More
+
+- [PowerSync Documentation](https://docs.powersync.com)
+- [SolidJS](https://solidjs.com)
+- [Vike](https://vike.dev)
+- [Hono](https://hono.dev)
+
+## License
+
+MIT

@@ -1,0 +1,25 @@
+replication:
+  connections:
+    - type: postgresql
+      uri: postgresql://powersync_role:powersync_secret@postgres:5432/solid_notes
+      sslmode: disable
+
+storage:
+  type: postgresql
+  uri: postgresql://postgres:postgres@postgres:5432/solid_notes
+  sslmode: disable
+
+port: 8080
+
+client_auth:
+  audience:
+    - http://localhost:8080
+  jwks:
+    keys:
+      - kty: oct
+        alg: HS256
+        k: UXzkfL7cdG2DcRk510iF_BVjPA0hYc8jdLCVH_wju30
+        kid: dev-key-1
+
+sync_config:
+  path: /config/sync-config.yaml

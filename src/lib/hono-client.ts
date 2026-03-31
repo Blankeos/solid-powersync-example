@@ -53,6 +53,20 @@ export const initHonoClient = (
     },
   })
 
+const getSessionHeaders = (): Record<string, string> => {
+  if (typeof window === "undefined") return {}
+  const sessionId = window.sessionStorage.getItem("session_id")
+  const userId = window.sessionStorage.getItem("user_id")
+  const headers: Record<string, string> = {}
+  if (sessionId) headers["X-Session-ID"] = sessionId
+  if (userId) headers["X-User-ID"] = userId
+  return headers
+}
+
 const baseurl = typeof window === "undefined" ? "" : (window?.location?.origin ?? "")
 /** Use this on the client. */
 export const honoClient = initHonoClient(baseurl)
+export const honoClientWithSession = () =>
+  hc<AppRouter>(`${baseurl}/api`, {
+    headers: () => getSessionHeaders(),
+  })

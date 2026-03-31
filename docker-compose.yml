@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: powersync-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: solid_notes
+    command: postgres -c wal_level=logical -c max_wal_senders=4 -c max_replication_slots=4
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  powersync:
+    image: journeyapps/powersync-service:latest
+    container_name: powersync-service
+    command: ["start", "-r", "unified"]
+    volumes:
+      - ./powersync:/config
+    environment:
+      - POWERSYNC_CONFIG_PATH=/config/service.yaml
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
