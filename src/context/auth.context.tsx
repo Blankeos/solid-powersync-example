@@ -50,11 +50,11 @@ export const AuthContextProvider: FlowComponent = (props) => {
     const result = await response.json()
 
     if ("user" in result) {
-      setUser(result.user)
       sessionStorage.setItem("session_id", result.session_id)
       sessionStorage.setItem("user_id", result.user.id)
       sessionStorage.setItem("user_name", result.user.name)
       sessionStorage.setItem("powersync_token", result.powersync_token)
+      setUser(result.user)
       setLoading(false)
     } else {
       throw new Error(result.error || "Login failed")

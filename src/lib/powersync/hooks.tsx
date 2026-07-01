@@ -46,7 +46,30 @@ export const PowerSyncProvider: ParentComponent = (props) => {
 
   let hasConnected = false
   let connecting = false
+  let connectedUserId: string | undefined
+  let connectionRun = 0
   let disposeStatusListener: (() => void) | undefined
+
+  const disposeConnectionState = () => {
+    disposeStatusListener?.()
+    disposeStatusListener = undefined
+    resetBackendConnector()
+    hasConnected = false
+    connecting = false
+    connectedUserId = undefined
+  }
+
+  const disconnectPowerSync = async () => {
+    if (!powerSyncDb.connected && !powerSyncDb.connecting) {
+      return
+    }
+
+    try {
+      await powerSyncDb.disconnect()
+    } catch (error) {
+      console.error("PowerSync disconnect error:", error)
+    }
+  }
 
   createEffect(() => {
     const currentUser = user()
@@ -54,20 +77,33 @@ export const PowerSyncProvider: ParentComponent = (props) => {
     const currentSessionId = sessionStorage.getItem("session_id") ?? undefined
 
     if (!currentUser || !token) {
+      connectionRun += 1
+      disposeConnectionState()
+      void disconnectPowerSync()
       setIsReady(false)
       setSyncStatus("offline")
       return
     }
 
-    if (hasConnected || connecting) {
+    if (hasConnected && connectedUserId === currentUser.id) {
       return
     }
 
+    if (connecting) return
+
+    const currentRun = ++connectionRun
     connecting = true
     setSyncStatus("syncing")
 
     ;(async () => {
       try {
+        if (hasConnected && connectedUserId !== currentUser.id) {
+          disposeConnectionState()
+          await disconnectPowerSync()
+        }
+
+        if (currentRun !== connectionRun) return
+
         const connector = getBackendConnector()
         connector.updateAuth(
           {
@@ -81,6 +117,8 @@ export const PowerSyncProvider: ParentComponent = (props) => {
 
         disposeStatusListener = powerSyncDb.registerListener({
           statusChanged: (status) => {
+            if (currentRun !== connectionRun) return
+
             const dataFlow = status.dataFlowStatus
             setSyncStatus(
               getSyncStatusMessage(
@@ -95,20 +133,28 @@ export const PowerSyncProvider: ParentComponent = (props) => {
 
         await powerSyncDb.connect(connector)
 
+        if (currentRun !== connectionRun) return
+
         hasConnected = true
+        connectedUserId = currentUser.id
         setIsReady(true)
       } catch (error) {
+        if (currentRun !== connectionRun) return
+
         console.error("PowerSync connection error:", error)
         setSyncStatus("error")
       } finally {
-        connecting = false
+        if (currentRun === connectionRun) {
+          connecting = false
+        }
       }
     })()
   })
 
   onCleanup(() => {
-    disposeStatusListener?.()
-    resetBackendConnector()
+    connectionRun += 1
+    disposeConnectionState()
+    void disconnectPowerSync()
   })
 
   return (
