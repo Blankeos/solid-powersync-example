@@ -1,9 +1,8 @@
-import { eq, useLiveQuery } from "@tanstack/solid-db"
 import { createMemo, createSignal, Show } from "solid-js"
 import { navigate } from "vike/client/router"
 import { useMetadata } from "vike-metadata-solid"
 import { useAuthContext } from "@/context/auth.context"
-import { notesCollection } from "@/lib/powersync"
+import { deleteNote, updateNote, useNoteQuery } from "@/queries/notes"
 import { useParams } from "@/route-tree.gen"
 import getTitle from "@/utils/get-title"
 
@@ -13,13 +12,11 @@ export default function NoteEditorPage() {
   })
 
   const params = useParams({ from: "/notes/@id" })
-  const noteId = params().id
+  const noteId = createMemo(() => params().id)
   const { user } = useAuthContext()
   const userId = createMemo(() => user()?.id)
 
-  const note = useLiveQuery((q) =>
-    q.from({ note: notesCollection }).where(({ note }) => eq(note.id, noteId)).findOne()
-  )
+  const note = useNoteQuery(noteId)
 
   const [title, setTitle] = createSignal("")
   const [content, setContent] = createSignal("")
@@ -53,19 +50,17 @@ export default function NoteEditorPage() {
     if (isSaving()) return
 
     setIsSaving(true)
-    const now = new Date().toISOString()
     const currentUserId = userId()
 
     try {
       const existingNote = note()
       if (existingNote && existingNote.owner_id === currentUserId) {
-        const tx = notesCollection.update(noteId, (draft) => {
-          draft.title = title() || derivedTitle()
-          draft.content = content() || derivedContent()
-          draft.is_public = isPublic() === null ? (derivedIsPublic() ? 1 : 0) : isPublic() ? 1 : 0
-          draft.updated_at = now
+        await updateNote({
+          id: noteId(),
+          title: title() || derivedTitle(),
+          content: content() || derivedContent(),
+          isPublic: isPublic() === null ? derivedIsPublic() : isPublic() === true,
         })
-        await tx.isPersisted.promise
       }
       navigate("/notes")
     } catch (err) {
@@ -83,8 +78,7 @@ export default function NoteEditorPage() {
     }
 
     try {
-      const tx = notesCollection.delete(noteId)
-      await tx.isPersisted.promise
+      await deleteNote(noteId())
       navigate("/notes")
     } catch (err) {
       console.error("Error deleting note:", err)

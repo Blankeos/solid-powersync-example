@@ -10,9 +10,11 @@ import { useAuthContext } from "@/context/auth.context"
 import { getBackendConnector, resetBackendConnector } from "./connector"
 import { initPowerSyncDb, powerSyncDb } from "./database"
 
+export type PowerSyncStatus = "offline" | "syncing" | "synced" | "error"
+
 type PowerSyncContextValue = {
   isReady: () => boolean
-  syncStatus: () => string
+  syncStatus: () => PowerSyncStatus
 }
 
 const PowerSyncContext = createContext<PowerSyncContextValue>()
@@ -30,7 +32,7 @@ function getSyncStatusMessage(
   connecting: boolean,
   downloadError?: Error,
   uploadError?: Error
-): string {
+): PowerSyncStatus {
   if (downloadError || uploadError) return "error"
   if (connected) return "synced"
   if (connecting) return "syncing"
@@ -40,7 +42,7 @@ function getSyncStatusMessage(
 export const PowerSyncProvider: ParentComponent = (props) => {
   const { user } = useAuthContext()
   const [isReady, setIsReady] = createSignal(false)
-  const [syncStatus, setSyncStatus] = createSignal("offline")
+  const [syncStatus, setSyncStatus] = createSignal<PowerSyncStatus>("offline")
 
   let hasConnected = false
   let connecting = false

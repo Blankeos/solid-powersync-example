@@ -1,25 +1,12 @@
-import { eq, or, useLiveQuery } from "@tanstack/solid-db"
 import { For, Show } from "solid-js"
 import { navigate } from "vike/client/router"
 import { useAuthContext } from "@/context/auth.context"
-import { notesCollection } from "@/lib/powersync"
+import { useVisibleNotesQuery } from "@/queries/notes"
 import { formatDistanceToNow } from "@/utils/format-distance"
 
 export default function NotesPage() {
   const { user } = useAuthContext()
-
-  const notes = useLiveQuery((q) => {
-    const userId = user()?.id
-
-    if (!userId) {
-      return null
-    }
-
-    return q
-      .from({ note: notesCollection })
-      .where(({ note }) => or(eq(note.owner_id, userId), eq(note.is_public, 1)))
-      .orderBy(({ note }) => note.updated_at, "desc")
-  })
+  const notes = useVisibleNotesQuery(() => user()?.id)
 
   const truncateContent = (content: string, maxLength = 100) => {
     if (!content) return "No content"

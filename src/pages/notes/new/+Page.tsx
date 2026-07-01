@@ -2,7 +2,7 @@ import { createMemo, createSignal, Show } from "solid-js"
 import { navigate } from "vike/client/router"
 import { useMetadata } from "vike-metadata-solid"
 import { useAuthContext } from "@/context/auth.context"
-import { notesCollection } from "@/lib/powersync"
+import { createNote } from "@/queries/notes"
 import getTitle from "@/utils/get-title"
 
 export default function NewNotePage() {
@@ -22,7 +22,6 @@ export default function NewNotePage() {
     if (isSaving()) return
 
     setIsSaving(true)
-    const now = new Date().toISOString()
     const currentUserId = userId()
 
     if (!currentUserId) {
@@ -31,17 +30,12 @@ export default function NewNotePage() {
     }
 
     try {
-      const newId = crypto.randomUUID()
-      const tx = notesCollection.insert({
-        id: newId,
+      await createNote({
         title: title(),
         content: content(),
-        is_public: isPublic() ? 1 : 0,
-        owner_id: currentUserId,
-        created_at: now,
-        updated_at: now,
+        isPublic: isPublic(),
+        ownerId: currentUserId,
       })
-      await tx.isPersisted.promise
       navigate("/notes")
     } catch (err) {
       console.error("Error saving note:", err)
