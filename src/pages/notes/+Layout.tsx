@@ -17,18 +17,18 @@ function NotesLayoutContent(props: FlowProps) {
 
   const statusColor = createMemo(() => {
     const status = syncStatus()
-    if (status === "connected") return "bg-green-500"
-    if (status === "connecting") return "bg-yellow-500"
+    if (status === "synced") return "bg-green-500"
+    if (status === "syncing") return "bg-yellow-500"
     if (status === "error") return "bg-red-500"
     return "bg-gray-400"
   })
 
   const statusText = createMemo(() => {
     const status = syncStatus()
-    if (status === "connected") return "Connected"
-    if (status === "connecting") return "Connecting..."
+    if (status === "synced") return "Synced"
+    if (status === "syncing") return "Syncing..."
     if (status === "error") return "Connection Error"
-    return "Disconnected"
+    return "Offline"
   })
 
   createEffect(() => {
