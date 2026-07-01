@@ -1,20 +1,11 @@
+import { eq, useLiveQuery } from "@tanstack/solid-db"
 import { createMemo, createSignal, Show } from "solid-js"
 import { navigate } from "vike/client/router"
 import { useMetadata } from "vike-metadata-solid"
 import { useAuthContext } from "@/context/auth.context"
-import { usePowerSyncExecute, usePowerSyncGetOne } from "@/context/powersync.context"
+import { notesCollection } from "@/lib/powersync"
 import { useParams } from "@/route-tree.gen"
 import getTitle from "@/utils/get-title"
-
-interface Note {
-  id: string
-  title: string
-  content: string
-  is_public: number
-  owner_id: string
-  created_at: string
-  updated_at: string
-}
 
 export default function NoteEditorPage() {
   useMetadata({
@@ -26,12 +17,9 @@ export default function NoteEditorPage() {
   const { user } = useAuthContext()
   const userId = createMemo(() => user()?.id)
 
-  const [note, loading, error] = usePowerSyncGetOne<Note>(
-    () => "SELECT * FROM notes WHERE id = ?",
-    () => [noteId]
+  const note = useLiveQuery((q) =>
+    q.from({ note: notesCollection }).where(({ note }) => eq(note.id, noteId)).findOne()
   )
-
-  const execute = usePowerSyncExecute()
 
   const [title, setTitle] = createSignal("")
   const [content, setContent] = createSignal("")
@@ -44,9 +32,9 @@ export default function NoteEditorPage() {
     return n ? n.owner_id === uid : true
   })
 
-  const isLoading = createMemo(() => loading())
-  const notFound = createMemo(() => !loading() && !note() && !error())
-  const hasError = createMemo(() => !loading() && error())
+  const isLoading = createMemo(() => note.isLoading)
+  const notFound = createMemo(() => !note.isLoading && !note() && !note.isError)
+  const hasError = createMemo(() => !note.isLoading && note.isError)
 
   const derivedTitle = createMemo(() => {
     const n = note()
@@ -71,16 +59,13 @@ export default function NoteEditorPage() {
     try {
       const existingNote = note()
       if (existingNote && existingNote.owner_id === currentUserId) {
-        await execute(
-          `UPDATE notes SET title = ?, content = ?, is_public = ?, updated_at = ? WHERE id = ?`,
-          [
-            title() || derivedTitle(),
-            content() || derivedContent(),
-            isPublic() === null ? (derivedIsPublic() ? 1 : 0) : isPublic() ? 1 : 0,
-            now,
-            noteId,
-          ]
-        )
+        const tx = notesCollection.update(noteId, (draft) => {
+          draft.title = title() || derivedTitle()
+          draft.content = content() || derivedContent()
+          draft.is_public = isPublic() === null ? (derivedIsPublic() ? 1 : 0) : isPublic() ? 1 : 0
+          draft.updated_at = now
+        })
+        await tx.isPersisted.promise
       }
       navigate("/notes")
     } catch (err) {
@@ -98,7 +83,8 @@ export default function NoteEditorPage() {
     }
 
     try {
-      await execute("DELETE FROM notes WHERE id = ?", [noteId])
+      const tx = notesCollection.delete(noteId)
+      await tx.isPersisted.promise
       navigate("/notes")
     } catch (err) {
       console.error("Error deleting note:", err)

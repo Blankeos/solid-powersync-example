@@ -1,28 +1,19 @@
 import { PowerSyncDatabase } from "@powersync/web"
-import { AppSchema } from "./schema"
+import { AppSchema, POWERSYNC_DB_FILENAME } from "./schema"
 
-let db: PowerSyncDatabase | null = null
+export const powerSyncDb = new PowerSyncDatabase({
+  database: {
+    dbFilename: POWERSYNC_DB_FILENAME,
+  },
+  schema: AppSchema,
+  flags: {
+    disableSSRWarning: true,
+  },
+})
 
-export async function getPowerSyncDb(): Promise<PowerSyncDatabase> {
-  if (db) {
-    return db
-  }
+let initPromise: Promise<void> | null = null
 
-  db = new PowerSyncDatabase({
-    database: {
-      dbFilename: "solid-notes.db",
-    },
-    schema: AppSchema,
-    flags: {
-      disableSSRWarning: true,
-    },
-  })
-
-  await db.init()
-
-  return db
-}
-
-export function resetPowerSyncDb() {
-  db = null
+export function initPowerSyncDb() {
+  initPromise ??= powerSyncDb.init()
+  return initPromise
 }

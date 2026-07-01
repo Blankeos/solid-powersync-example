@@ -1,4 +1,7 @@
 import { column, Schema, Table } from "@powersync/web"
+import { z } from "zod"
+
+export const POWERSYNC_DB_FILENAME = "solid-notes.db"
 
 export const AppSchema = new Schema({
   notes: new Table({
@@ -12,12 +15,14 @@ export const AppSchema = new Schema({
   }),
 })
 
-export type Note = {
-  id: string
-  title: string
-  content: string
-  is_public: number
-  owner_id: string
-  created_at: string
-  updated_at: string
-}
+export const noteSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  content: z.string(),
+  is_public: z.number(),
+  owner_id: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+})
+
+export type Note = z.infer<typeof noteSchema>

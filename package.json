@@ -12,7 +12,9 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "update": "bunx npm-check-updates --format group --interactive",
-    "db:migrate": "bun run src/server/database/run-migrations.ts"
+    "db:migrate": "bun run src/server/database/run-migrations.ts",
+    "powersync:setup": "docker exec -it powersync-postgres psql -U postgres -d solid_notes -c \"CREATE PUBLICATION powersync FOR ALL TABLES;\"",
+    "powersync:restart": "docker compose -f docker-compose.yml restart powersync"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +33,9 @@
     "@powersync/common": "^1.49.0",
     "@powersync/web": "^1.36.0",
     "@tailwindcss/vite": "^4.2.1",
+    "@tanstack/db": "^0.6.13",
+    "@tanstack/powersync-db-collection": "^0.1.51",
+    "@tanstack/solid-db": "^0.2.27",
     "hono": "^4.12.7",
     "jose": "^6.2.1",
     "nanoid": "^5.0.9",
@@ -39,6 +44,7 @@
     "vike": "^0.4.255",
     "vike-metadata-solid": "^1.0.5",
     "vike-photon": "^0.1.24",
-    "vike-solid": "^0.8.1"
+    "vike-solid": "^0.8.1",
+    "zod": "^4.4.3"
   }
 }

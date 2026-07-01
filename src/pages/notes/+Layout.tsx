@@ -2,7 +2,7 @@ import { createEffect, createMemo, type FlowProps, Show, Suspense } from "solid-
 import { navigate } from "vike/client/router"
 import { useMetadata } from "vike-metadata-solid"
 import { useAuthContext } from "@/context/auth.context"
-import { usePowerSync } from "@/context/powersync.context"
+import { usePowerSync } from "@/lib/powersync"
 import { getRoute } from "@/route-tree.gen"
 import getTitle from "@/utils/get-title"
 

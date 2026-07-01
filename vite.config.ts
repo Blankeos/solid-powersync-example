@@ -10,6 +10,9 @@ export default defineConfig({
   server: { port: 3000 },
   preview: { port: 3000 },
   envPrefix: ["PUBLIC_"],
+  worker: {
+    format: "es",
+  },
   optimizeDeps: {
     exclude: ["@powersync/web"],
   },
