@@ -121,7 +121,9 @@ export function usePowerSyncGetOne<T = unknown>(
     error: null,
   })
 
-  createEffect(async () => {
+  let abortController: AbortController | null = null
+
+  createEffect(() => {
     const database = db()
     const ready = isReady()
 
@@ -133,16 +135,42 @@ export function usePowerSyncGetOne<T = unknown>(
     const sql = query()
     const queryParams = params?.() ?? []
 
+    if (abortController) {
+      abortController.abort()
+    }
+    abortController = new AbortController()
+
     setState({ loading: true, error: null })
 
-    try {
-      const result = await database.get<T | null>(sql, queryParams)
-      setState({ data: result ?? null, loading: false })
-    } catch (err) {
-      setState({
-        error: err instanceof Error ? err : new Error(String(err)),
-        loading: false,
-      })
+    database.watch(
+      sql,
+      queryParams,
+      {
+        onResult: (result) => {
+          try {
+            const rows = result.rows?._array ?? []
+            setState({ data: (rows[0] as T | undefined) ?? null, loading: false })
+          } catch (err) {
+            setState({
+              error: err instanceof Error ? err : new Error(String(err)),
+              loading: false,
+            })
+          }
+        },
+        onError: (error) => {
+          setState({
+            error: error instanceof Error ? error : new Error(String(error)),
+            loading: false,
+          })
+        },
+      },
+      { signal: abortController.signal }
+    )
+  })
+
+  onCleanup(() => {
+    if (abortController) {
+      abortController.abort()
     }
   })
 

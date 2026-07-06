@@ -1,4 +1,4 @@
-import { createMemo, createSignal, Show } from "solid-js"
+import { createEffect, createMemo, createSignal, Show } from "solid-js"
 import { navigate } from "vike/client/router"
 import { useMetadata } from "vike-metadata-solid"
 import { useAuthContext } from "@/context/auth.context"
@@ -37,6 +37,16 @@ export default function NoteEditorPage() {
   const [content, setContent] = createSignal("")
   const [isPublic, setIsPublic] = createSignal<boolean | null>(null)
   const [isSaving, setIsSaving] = createSignal(false)
+  const [hasLocalEdits, setHasLocalEdits] = createSignal(false)
+
+  createEffect(() => {
+    const n = note()
+    if (!n || hasLocalEdits()) return
+
+    setTitle(n.title ?? "")
+    setContent(n.content ?? "")
+    setIsPublic(n.is_public === 1)
+  })
 
   const canEdit = createMemo(() => {
     const n = note()
@@ -48,14 +58,6 @@ export default function NoteEditorPage() {
   const notFound = createMemo(() => !loading() && !note() && !error())
   const hasError = createMemo(() => !loading() && error())
 
-  const derivedTitle = createMemo(() => {
-    const n = note()
-    return n?.title ?? ""
-  })
-  const derivedContent = createMemo(() => {
-    const n = note()
-    return n?.content ?? ""
-  })
   const derivedIsPublic = createMemo(() => {
     const n = note()
     return n?.is_public === 1
@@ -74,8 +76,8 @@ export default function NoteEditorPage() {
         await execute(
           `UPDATE notes SET title = ?, content = ?, is_public = ?, updated_at = ? WHERE id = ?`,
           [
-            title() || derivedTitle(),
-            content() || derivedContent(),
+            title(),
+            content(),
             isPublic() === null ? (derivedIsPublic() ? 1 : 0) : isPublic() ? 1 : 0,
             now,
             noteId,
@@ -214,8 +216,11 @@ export default function NoteEditorPage() {
           <input
             type="text"
             placeholder="Note title"
-            value={title() || derivedTitle()}
-            onInput={(e) => setTitle(e.currentTarget.value)}
+            value={title()}
+            onInput={(e) => {
+              setHasLocalEdits(true)
+              setTitle(e.currentTarget.value)
+            }}
             disabled={!canEdit()}
             class="mb-4 w-full border-0 bg-transparent font-semibold text-3xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-0 disabled:text-gray-500"
           />
@@ -228,8 +233,11 @@ export default function NoteEditorPage() {
 
           <textarea
             placeholder="Start writing..."
-            value={content() || derivedContent()}
-            onInput={(e) => setContent(e.currentTarget.value)}
+            value={content()}
+            onInput={(e) => {
+              setHasLocalEdits(true)
+              setContent(e.currentTarget.value)
+            }}
             disabled={!canEdit()}
             class="mb-6 min-h-[300px] w-full resize-none border-0 bg-transparent text-base text-gray-700 leading-relaxed placeholder-gray-300 focus:outline-none focus:ring-0 disabled:text-gray-500"
           />
@@ -277,7 +285,10 @@ export default function NoteEditorPage() {
                 <input
                   type="checkbox"
                   checked={isPublic() ?? derivedIsPublic()}
-                  onChange={(e) => setIsPublic(e.currentTarget.checked)}
+                  onChange={(e) => {
+                    setHasLocalEdits(true)
+                    setIsPublic(e.currentTarget.checked)
+                  }}
                   class="peer sr-only"
                 />
                 <div class="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-green-500 peer-focus:ring-2 peer-focus:ring-green-300" />
