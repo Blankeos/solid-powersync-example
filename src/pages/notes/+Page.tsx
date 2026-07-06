@@ -17,7 +17,7 @@ interface Note {
 export default function NotesPage() {
   const { user } = useAuthContext()
 
-  const [notes, loading] = usePowerSyncQuery<Note>(
+  const [notes] = usePowerSyncQuery<Note>(
     () => `SELECT * FROM notes WHERE owner_id = ? OR is_public = 1 ORDER BY updated_at DESC`,
     () => [user()?.id]
   )
@@ -49,13 +49,7 @@ export default function NotesPage() {
         </button>
       </div>
 
-      <Show when={loading()}>
-        <div class="flex items-center justify-center py-20">
-          <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
-        </div>
-      </Show>
-
-      <Show when={!loading() && notes().length === 0}>
+      <Show when={notes().length === 0}>
         <div class="flex flex-col items-center justify-center py-20 text-center">
           <div class="mb-4 rounded-full bg-gray-100 p-4">
             <svg
@@ -92,7 +86,7 @@ export default function NotesPage() {
         </div>
       </Show>
 
-      <Show when={!loading() && notes().length > 0}>
+      <Show when={notes().length > 0}>
         <div class="grid gap-3">
           <For each={notes()}>
             {(note) => (

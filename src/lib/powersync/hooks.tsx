@@ -270,6 +270,10 @@ export const PowerSyncProvider: ParentComponent = (props) => {
 
         const database = await getPowerSyncDb()
 
+        setDb(database)
+        setIsReady(true)
+        connecting = false
+
         statusListener = database.registerListener({
           statusChanged: (status) => {
             const dataFlow = status.dataFlowStatus
@@ -287,8 +291,6 @@ export const PowerSyncProvider: ParentComponent = (props) => {
         await database.connect(connector)
 
         hasConnected = true
-        setDb(database)
-        setIsReady(true)
       } catch (error) {
         console.error("PowerSync connection error:", error)
         setSyncStatus("error")

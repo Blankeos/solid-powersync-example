@@ -24,15 +24,26 @@ const [useAuthContext, Provider] = createStrictContext<AuthContextValue>("AuthCo
 
 export { useAuthContext }
 
+function readStoredUser(): User | null {
+  if (typeof window === "undefined") {
+    return null
+  }
+  const id = sessionStorage.getItem("user_id")
+  const name = sessionStorage.getItem("user_name")
+  if (id && name) {
+    return { id, name }
+  }
+  return null
+}
+
 export const AuthContextProvider: FlowComponent = (props) => {
-  const [user, setUser] = createSignal<User | null>(null)
-  const [loading, setLoading] = createSignal(true)
+  const [user, setUser] = createSignal<User | null>(readStoredUser())
+  const [loading, setLoading] = createSignal(false)
 
   onMount(() => {
-    const id = sessionStorage.getItem("user_id")
-    const name = sessionStorage.getItem("user_name")
-    if (id && name) {
-      setUser({ id, name })
+    const stored = readStoredUser()
+    if (stored) {
+      setUser(stored)
     }
     setLoading(false)
   })
