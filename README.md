@@ -46,10 +46,16 @@ This starts:
 cp .env.example .env
 ```
 
-### 3. Run Database Migrations
+### 3. Push Schema to Database
 
 ```bash
-bun run db:migrate
+bun run db:push
+```
+
+### 4. (Optional) Seed Demo Users
+
+```bash
+bun run db:seed
 ```
 
 ### 4. Start Development Server
@@ -95,7 +101,7 @@ src/
 │   ├── powersync.context.tsx    # PowerSync provider
 │   └── auth.context.tsx         # Auth state
 ├── server/
-│   ├── database/                # DB client & migrations
+│   ├── database/                # Drizzle schema & client
 │   └── modules/
 │       ├── auth/                # Auth endpoints
 │       ├── notes/               # Notes CRUD
@@ -130,13 +136,17 @@ src/
 
 ## Scripts
 
-| Command              | Description             |
-| -------------------- | ----------------------- |
-| `bun dev`            | Start dev server        |
-| `bun run build`      | Build for production    |
-| `bun run db:migrate` | Run database migrations |
-| `bun run lint`       | Lint code               |
-| `bun run check`      | Type check              |
+| Command                   | Description                      |
+| ------------------------- | -------------------------------- |
+| `bun dev`                 | Start dev server                 |
+| `bun run build`           | Build for production             |
+| `bun run db:push`         | Push Drizzle schema to DB        |
+| `bun run db:generate`     | Generate Drizzle migration files |
+| `bun run db:migrate`      | Run Drizzle migrations           |
+| `bun run db:seed`         | Seed demo users                  |
+| `bun run db:studio`       | Open Drizzle Studio              |
+| `bun run lint`            | Lint code                        |
+| `bun run check`           | Type check                       |
 
 ## Learn More
 

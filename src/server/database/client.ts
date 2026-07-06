@@ -1,18 +1,14 @@
+import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { serverEnv } from "@/env.server"
+import * as schema from "./schema"
 
-let sql: postgres.Sql | null = null
+let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null
 
 export function getDb() {
-  if (!sql) {
-    sql = postgres(serverEnv.DATABASE_URL)
+  if (!dbInstance) {
+    const client = postgres(serverEnv.DATABASE_URL)
+    dbInstance = drizzle(client, { schema })
   }
-  return sql
-}
-
-export async function closeDb() {
-  if (sql) {
-    await sql.end()
-    sql = null
-  }
+  return dbInstance
 }
