@@ -2,7 +2,7 @@ import { createMemo, createSignal, Show } from "solid-js"
 import { navigate } from "vike/client/router"
 import { useMetadata } from "vike-metadata-solid"
 import { useAuthContext } from "@/context/auth.context"
-import { usePowerSyncExecute } from "@/context/powersync.context"
+import { useNoteMutations } from "@/queries/notes"
 import getTitle from "@/utils/get-title"
 
 export default function NewNotePage() {
@@ -12,7 +12,7 @@ export default function NewNotePage() {
 
   const { user } = useAuthContext()
   const userId = createMemo(() => user()?.id)
-  const execute = usePowerSyncExecute()
+  const { createNote } = useNoteMutations()
 
   const [title, setTitle] = createSignal("")
   const [content, setContent] = createSignal("")
@@ -23,16 +23,19 @@ export default function NewNotePage() {
     if (isSaving()) return
 
     setIsSaving(true)
-    const now = new Date().toISOString()
     const currentUserId = userId()
 
     try {
-      const newId = crypto.randomUUID()
-      await execute(
-        `INSERT INTO notes (id, title, content, is_public, owner_id, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [newId, title(), content(), isPublic() ? 1 : 0, currentUserId, now, now]
-      )
+      if (!currentUserId) {
+        throw new Error("Cannot create a note without a user")
+      }
+
+      await createNote({
+        title: title(),
+        content: content(),
+        is_public: isPublic(),
+        owner_id: currentUserId,
+      })
       navigate("/notes")
     } catch (err) {
       console.error("Error saving note:", err)

@@ -1,26 +1,14 @@
 import { createMemo, For, Show } from "solid-js"
 import { navigate } from "vike/client/router"
 import { useAuthContext } from "@/context/auth.context"
-import { usePowerSyncQuery } from "@/context/powersync.context"
+import { useVisibleNotesQuery } from "@/queries/notes"
 import { formatDistanceToNow } from "@/utils/format-distance"
-
-interface Note {
-  id: string
-  title: string
-  content: string
-  is_public: number
-  owner_id: string
-  created_at: string
-  updated_at: string
-}
 
 export default function NotesPage() {
   const { user } = useAuthContext()
+  const userId = createMemo(() => user()?.id)
 
-  const [notes] = usePowerSyncQuery<Note>(
-    () => `SELECT * FROM notes WHERE owner_id = ? OR is_public = 1 ORDER BY updated_at DESC`,
-    () => [user()?.id]
-  )
+  const [notes] = useVisibleNotesQuery(userId)
 
   const truncateContent = (content: string, maxLength = 100) => {
     if (!content) return "No content"

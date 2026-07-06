@@ -1,5 +1,5 @@
 import { PowerSyncDatabase } from "@powersync/web"
-import { AppSchema } from "./schema"
+import { AppSchema, POWERSYNC_DB_FILENAME } from "./schema"
 
 let db: PowerSyncDatabase | null = null
 
@@ -10,7 +10,7 @@ export async function getPowerSyncDb(): Promise<PowerSyncDatabase> {
 
   db = new PowerSyncDatabase({
     database: {
-      dbFilename: "solid-notes.db",
+      dbFilename: POWERSYNC_DB_FILENAME,
     },
     schema: AppSchema,
     flags: {

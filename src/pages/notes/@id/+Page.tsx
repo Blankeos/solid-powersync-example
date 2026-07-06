@@ -2,19 +2,9 @@ import { createEffect, createMemo, createSignal, Show } from "solid-js"
 import { navigate } from "vike/client/router"
 import { useMetadata } from "vike-metadata-solid"
 import { useAuthContext } from "@/context/auth.context"
-import { usePowerSyncExecute, usePowerSyncGetOne } from "@/context/powersync.context"
+import { useNoteMutations, useNoteQuery } from "@/queries/notes"
 import { useParams } from "@/route-tree.gen"
 import getTitle from "@/utils/get-title"
-
-interface Note {
-  id: string
-  title: string
-  content: string
-  is_public: number
-  owner_id: string
-  created_at: string
-  updated_at: string
-}
 
 export default function NoteEditorPage() {
   useMetadata({
@@ -22,16 +12,12 @@ export default function NoteEditorPage() {
   })
 
   const params = useParams({ from: "/notes/@id" })
-  const noteId = params().id
+  const noteId = createMemo(() => params().id)
   const { user } = useAuthContext()
   const userId = createMemo(() => user()?.id)
 
-  const [note, loading, error] = usePowerSyncGetOne<Note>(
-    () => "SELECT * FROM notes WHERE id = ?",
-    () => [noteId]
-  )
-
-  const execute = usePowerSyncExecute()
+  const [note, loading, error] = useNoteQuery(noteId)
+  const { updateNote, deleteNote } = useNoteMutations()
 
   const [title, setTitle] = createSignal("")
   const [content, setContent] = createSignal("")
@@ -62,27 +48,23 @@ export default function NoteEditorPage() {
     const n = note()
     return n?.is_public === 1
   })
+  const currentIsPublic = createMemo(() => isPublic() ?? derivedIsPublic())
 
   const handleSave = async () => {
     if (isSaving()) return
 
     setIsSaving(true)
-    const now = new Date().toISOString()
     const currentUserId = userId()
 
     try {
       const existingNote = note()
       if (existingNote && existingNote.owner_id === currentUserId) {
-        await execute(
-          `UPDATE notes SET title = ?, content = ?, is_public = ?, updated_at = ? WHERE id = ?`,
-          [
-            title(),
-            content(),
-            isPublic() === null ? (derivedIsPublic() ? 1 : 0) : isPublic() ? 1 : 0,
-            now,
-            noteId,
-          ]
-        )
+        await updateNote({
+          id: noteId(),
+          title: title(),
+          content: content(),
+          is_public: currentIsPublic(),
+        })
       }
       navigate("/notes")
     } catch (err) {
@@ -100,7 +82,7 @@ export default function NoteEditorPage() {
     }
 
     try {
-      await execute("DELETE FROM notes WHERE id = ?", [noteId])
+      await deleteNote(noteId())
       navigate("/notes")
     } catch (err) {
       console.error("Error deleting note:", err)
@@ -253,7 +235,7 @@ export default function NoteEditorPage() {
                     viewBox="0 0 24 24"
                   >
                     <Show
-                      when={isPublic() ?? derivedIsPublic()}
+                      when={currentIsPublic()}
                       fallback={
                         <path
                           stroke-linecap="round"
@@ -272,11 +254,11 @@ export default function NoteEditorPage() {
                     </Show>
                   </svg>
                   <span class="font-medium text-gray-900">
-                    {(isPublic() ?? derivedIsPublic()) ? "Public" : "Private"}
+                    {currentIsPublic() ? "Public" : "Private"}
                   </span>
                 </div>
                 <p class="ml-7 text-gray-500 text-sm">
-                  {(isPublic() ?? derivedIsPublic())
+                  {currentIsPublic()
                     ? "This note is visible to all users"
                     : "Only you can see this note"}
                 </p>
@@ -284,7 +266,7 @@ export default function NoteEditorPage() {
               <label class="relative inline-flex cursor-pointer items-center">
                 <input
                   type="checkbox"
-                  checked={isPublic() ?? derivedIsPublic()}
+                  checked={currentIsPublic()}
                   onChange={(e) => {
                     setHasLocalEdits(true)
                     setIsPublic(e.currentTarget.checked)
