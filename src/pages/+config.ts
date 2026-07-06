@@ -1,11 +1,9 @@
-// @ts-nocheck
-import vikePhoton from "vike-photon/config"
+import type { Config } from "vike/types"
 import config from "vike-solid/config"
+import { serverEnv } from "@/env.server"
 
 // Default config (can be overridden by pages)
 export default {
-  extends: [config, vikePhoton],
-  photon: {
-    server: "../server/server.ts",
-  },
-}
+  extends: [config],
+  port: serverEnv.PORT,
+} satisfies Config

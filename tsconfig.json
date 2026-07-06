@@ -19,6 +19,7 @@
     "types": [
       "@types/bun", // Remove when Node
       "vite/client",
+      "vite-plugin-pwa/client",
       "vike-solid/client"
     ],
     "jsx": "preserve",

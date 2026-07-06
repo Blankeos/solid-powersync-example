@@ -8,6 +8,7 @@ This is an Apple Notes-style app showcasing:
 
 - **Local-first architecture**: Data is stored locally in SQLite, synced when online
 - **Offline support**: Full functionality while offline, syncs on reconnection
+- **PWA shell**: Service worker (Workbox via `vite-plugin-pwa`) precaches JS/CSS/WASM so the app loads without network after first visit
 - **Real-time sync**: Changes propagate across devices instantly when online
 - **Per-user data**: Private notes visible only to owner, public notes visible to all
 
