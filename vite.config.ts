@@ -61,9 +61,8 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: true,
-        suppressWarnings: true,
-        type: "module",
+        // Only workaround to run dev, don't run the plugin: https://github.com/vikejs/vike/issues/388#issuecomment-1199280084
+        enabled: false,
       },
     }),
   ],
